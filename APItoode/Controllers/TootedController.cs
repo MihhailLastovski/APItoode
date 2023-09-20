@@ -1,75 +1,75 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using APItoode.Data;
+using Microsoft.AspNetCore.Mvc;
 using ToodeAPI.Models;
 
 namespace veebirakendus.Controllers;
-
-[ApiController]
 [Route("[controller]")]
+[ApiController]
 public class TootedController : ControllerBase
 {
-    private static List<Toode> _tooted = new()
-        {
-            new Toode(1,"Koola", 1.5, true),
-            new Toode(2,"Fanta", 1.0, false),
-            new Toode(3,"Sprite", 1.7, true),
-            new Toode(4,"Vichy", 2.0, true),
-            new Toode(5,"Vitamin well", 2.5, true)
-        };
+    private readonly ApplicationDbContext _context;
 
-    // GET https://localhost:4444/tooted
+    public TootedController(ApplicationDbContext context)
+    {
+        _context = context;
+    }
+
     [HttpGet]
     public List<Toode> Get()
     {
-        return _tooted;
+        return _context.Tooted.ToList(); ;
     }
 
-    // DELETE https://localhost:4444/tooted/kustuta/0
-    [HttpDelete("kustuta/{index}")]
-    public List<Toode> Delete(int index)
+    [HttpDelete("kustuta/{id}")]
+    public List<Toode> Delete(int id)
     {
-        _tooted.RemoveAt(index);
-        return _tooted;
-    }
+        var toode = _context.Tooted.Find(id);
 
-    [HttpDelete("kustuta2/{index}")]
-    public string Delete2(int index)
-    {
-        _tooted.RemoveAt(index);
-        return "Kustutatud!";
-    }
-
-    // POST https://localhost:4444/tooted/lisa/1/Coca/1.5/true
-    [HttpPost("lisa/{id}/{nimi}/{hind}/{aktiivne}")]
-    public List<Toode> Add(int id, string nimi, double hind, bool aktiivne)
-    {
-        Toode toode = new Toode(id, nimi, hind, aktiivne);
-        _tooted.Add(toode);
-        return _tooted;
-    }
-
-    [HttpPost("lisa2")]
-    public List<Toode> Add2(int id, string nimi, double hind, bool aktiivne)
-    {
-        Toode toode = new Toode(id, nimi, hind, aktiivne);
-        _tooted.Add(toode);
-        return _tooted;
-    }
-
-    // PATCH https://localhost:4444/tooted/hind-dollaritesse/1.5
-    [HttpPatch("hind-dollaritesse/{kurss}")]
-    public List<Toode> UpdatePrices(double kurss)
-    {
-        for (int i = 0; i < _tooted.Count; i++)
+        if (toode == null)
         {
-            _tooted[i].Price = _tooted[i].Price * kurss;
+            return _context.Tooted.ToList();
         }
-        return _tooted;
+
+        _context.Tooted.Remove(toode);
+        _context.SaveChanges();
+        return _context.Tooted.ToList();
     }
 
-    [HttpPost("lisa")]
-    public List<Toode> Add([FromBody] Toode toode)
+    [HttpPost("lisa/{nimi}/{hind}/{aktiivne}")]
+    public List<Toode> Add(string nimi, double hind, bool aktiivne)
     {
-        _tooted.Add(toode);
-        return _tooted;
+        bool boo = true;
+        foreach (var item in _context.Tooted)
+        {
+            if (item.Name == nimi && item.Price == hind)
+            {
+                boo = false;
+            }
+        }
+
+        if (boo)
+        {
+            _context.Tooted.Add(new Toode(nimi, hind, aktiivne));
+            _context.SaveChanges();
+        }
+
+        return _context.Tooted.ToList();
+    }
+
+
+    [HttpGet("hind-dollaritesse/{kurss}")]
+    public List<Toode> Dollaritesse(double kurss)
+    {
+        if (kurss == 1)
+            return _context.Tooted.ToList();
+
+        List<Toode> listT = new List<Toode>();
+        foreach (var t in _context.Tooted)
+        {
+            t.Price *= kurss;
+            listT.Add(t);
+        }
+
+        return listT;
     }
 }
