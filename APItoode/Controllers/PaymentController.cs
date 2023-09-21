@@ -57,11 +57,14 @@ namespace APItoode.Controllers
                 var jsonDoc = JsonDocument.Parse(responseContent);
                 var paymentLink = jsonDoc.RootElement.GetProperty("payment_link");
 
-                //Toode update
-                toode.IsActive = false;
+                toode.Kogus -= 1;
+                if (toode.Kogus == 0)
+                {
+                    toode.IsActive = false;
+                }
                 _context.Tooted.Update(toode);
                 _context.SaveChanges();
-
+                _context.Tooted.ToList();
                 return Ok(paymentLink);
             }
             else

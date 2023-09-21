@@ -1,5 +1,7 @@
 ﻿using APItoode.Data;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Mvc;
+using System.Xml.Linq;
 using ToodeAPI.Models;
 
 namespace veebirakendus.Controllers;
@@ -35,21 +37,30 @@ public class TootedController : ControllerBase
         return _context.Tooted.ToList();
     }
 
-    [HttpPost("lisa/{nimi}/{hind}/{aktiivne}")]
-    public List<Toode> Add(string nimi, double hind, bool aktiivne)
+    [HttpPost("lisa/{nimi}/{hind}/{aktiivne}/{kogus}")]
+    public List<Toode> Add(string nimi, double hind, bool aktiivne, int kogus)
     {
-        bool boo = true;
+        bool check = true;
         foreach (var item in _context.Tooted)
         {
             if (item.Name == nimi && item.Price == hind)
             {
-                boo = false;
+                check = false;
+                item.Kogus += kogus;
+                if (item.IsActive == false)
+                {
+                    item.IsActive = true;
+
+                }
+                _context.Tooted.Update(item);
+
             }
         }
+        _context.SaveChanges();
 
-        if (boo)
+        if (check)
         {
-            _context.Tooted.Add(new Toode(nimi, hind, aktiivne));
+            _context.Tooted.Add(new Toode(nimi, hind, aktiivne, kogus));
             _context.SaveChanges();
         }
 
